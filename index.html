@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yahoo Finance App</title>
+</head>
+<body>
+  <h1>Yahoo Finance Data</h1>
+  <button onclick="fetchHistorical()">Download Historical Data</button>
+  <button onclick="backtest()">Backtest</button>
+  <pre id="output"></pre>
+
+  <script>
+    let jsonData = null;
+    let transactions = [];
+    //This function fetches the data and saves it into a JSON
+    async function fetchHistorical() {
+      try {
+        const response = await fetch('/api/historical');
+        const data = await response.json();
+        const quotes = data.quotes;
+
+        jsonData = quotes;
+
+        console.log(jsonData);
+        const blob = new Blob([JSON.stringify(jsonData)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'historical_data.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      //  document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        console.error('Error fetching historical data:', error);
+      }
+    }
+
+    async function backtest() {
+      try {
+        const closingPrices = jsonData.map(quote => quote.close);
+        const shortTimeFrame = 10;
+        const longTimeFrame = 50;
+        let shortSMA = calcSMA(closingPrices, shortTimeFrame);
+        let longSMA = calcSMA(closingPrices, longTimeFrame);
+
+        
+        const userInfo = {
+            balance: 100000,
+            numStock: 0,
+        }
+
+        let shortBelow = (shortSMA < longSMA) ? true : false;
+        for(let i = 50; i < closingPrices.length; i++) {
+            shortSMA = updateSMA(closingPrices, shortSMA, i, shortTimeFrame);
+            longSMA = updateSMA(closingPrices, longSMA, i, longTimeFrame);
+
+            if(shortSMA > longSMA && shortBelow) {
+                buyStock(jsonData, userInfo, i);
+                shortBelow = false;
+            }
+            else if(shortSMA < longSMA && !shortBelow && userInfo.numStock > 0) {
+                sellStock(jsonData, userInfo, i);
+                shortBelow = true;
+            }
+        }
+
+        for(let i = 0; i < transactions.length; i++) {
+            console.log(transactions[i]);
+        }
+
+        console.log("BALANCE: " + userInfo.balance);
+        console.log("AMOUNT INVESTED: " + (userInfo.numStock * closingPrices[closingPrices.length - 1]));
+        console.log("TOTAL RETURN: " + (((userInfo.numStock * closingPrices[closingPrices.length - 1]) - 100000) / 1000).toFixed(2) + "%");
+
+        printStats(userInfo, transactions);
+      } catch (error) {
+        console.error('Error fetching sma data:', error);
+      }
+    }
+
+    function calcSMA(closingPrices, timeFrame) {
+        let sum = 0.00;
+        let startingIndex = timeFrame - 1;
+        for(let i = 0; i < timeFrame; i++) {
+            sum += closingPrices[startingIndex];
+            startingIndex--;
+        }
+
+        return (sum / timeFrame);
+    }
+
+    function updateSMA(closingPrices, sma, index, smaSize) {
+        sma = sma + ((closingPrices[index] - closingPrices[index-smaSize]) / smaSize);
+
+        return sma;
+    }
+
+    function buyStock(jsonData, userInfo, index) {
+        const amountToInvest = userInfo.balance * 0.6;
+        if(amountToInvest > jsonData[index].close) {
+            const numSharesToBuy = Math.floor(amountToInvest / jsonData[index].close);
+            const singleTransaction = {isBuy: true, date: jsonData[index].date, numShares: numSharesToBuy, price: jsonData[index].close};
+            transactions.push(singleTransaction);
+            userInfo.balance -= (numSharesToBuy * jsonData[index].close);
+            userInfo.numStock += numSharesToBuy;
+        }
+    }
+
+    function sellStock(jsonData, userInfo, index) {
+        const amountToDivest = userInfo.balance * 0.3;
+        const numSharesToSell = Math.floor(amountToDivest / jsonData[index].close);
+        const singleTransaction = {isBuy: false, date: jsonData[index].date, numShares: numSharesToSell, price: jsonData[index].close};
+        transactions.push(singleTransaction);
+        userInfo.balance += (numSharesToSell * jsonData[index].close);
+        userInfo.numStock -= numSharesToSell;
+    }
+    function printStats(userInfo, transactions) {
+        let date = null;
+        let singleGainLoss = 0;
+        let totalGainLoss = 0;
+        let currentNumStock = 0;
+        let currentBalance = 100000;
+        let outputText = "";
+        for(let i = 0; i < transactions.length; i++) {
+            date = transactions[i].date.split('T')[0];
+            if(transactions[i].isBuy) {
+                currentNumStock += transactions[i].numShares;
+                currentBalance -= transactions[i].numShares * transactions[i].price;
+            }
+            else {
+                currentNumStock -= transactions[i].numShares;
+                currentBalance += transactions[i].numShares * transactions[i].price;
+            }
+            singleGainLoss = (currentNumStock * transactions[i].price + currentBalance) - 100000;
+            totalGainLoss += singleGainLoss;
+
+            outputText += (date + " " + "SINGLE GAIN/LOSS: $" + singleGainLoss.toFixed(2) + " TOTAL GAIN/LOSS: $" + totalGainLoss.toFixed(2) + "\n");
+        }
+        document.getElementById('output').textContent = outputText;
+    }
+  </script>
+</body>
+</html>
