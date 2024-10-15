@@ -14,9 +14,13 @@ app.get('/', (req, res) => {
 //API endpoint to get historical data
 app.get('/api/historical', async (req, res) => {
     try {
-      const quotes = await yahooFinance.chart('FNGU', {
+      let stock = req.query.symbol;
+      console.log(stock);
+      let currentDate = req.query.currentDate;
+      console.log(currentDate);
+      const quotes = await yahooFinance.chart(stock, {
         period1: '2021-01-01',
-        period2: '2024-10-06',
+        period2: currentDate,
         interval: '1d',
       });
       res.json(quotes);

@@ -7,7 +7,8 @@
 </head>
 <body>
   <h1>Yahoo Finance Data</h1>
-  <button onclick="fetchHistorical()">Download Historical Data</button>
+  <button onclick="fetchHistorical('FNGU')">Download Historical FNGU Data</button>
+  <button onclick="fetchHistorical('FNGD')">Download Historical FNGD Data</button>
   <button onclick="backtest()">Backtest</button>
   <pre id="output"></pre>
 
@@ -15,9 +16,12 @@
     let jsonData = null;
     let transactions = [];
     //This function fetches the data and saves it into a JSON
-    async function fetchHistorical() {
+    async function fetchHistorical(dataset) {
       try {
-        const response = await fetch('/api/historical');
+        const today = new Date();
+        let currentDate = today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + (today.getDate() - 1);
+        console.log(currentDate);
+        const response = await fetch(`/api/historical?symbol=${dataset}&currentDate=${currentDate}`);
         const data = await response.json();
         const quotes = data.quotes;
 
@@ -40,6 +44,7 @@
       }
     }
 
+    //Backtest the algo
     async function backtest() {
       try {
         const closingPrices = jsonData.map(quote => quote.close);
@@ -83,6 +88,7 @@
       }
     }
 
+    //Calculates the starting SMA
     function calcSMA(closingPrices, timeFrame, startingIndex) {
         let sum = 0.00;
         for(let i = startingIndex - timeFrame; i < startingIndex; i++) {
@@ -92,6 +98,7 @@
         return (sum / timeFrame);
     }
 
+    //This is a testing function to judge the accuracy of updateSMA
     function testSMA(closingPrices, sma, index, smaSize) {
       let sum = 0.00;
       for(let i = (index-smaSize); i < index; i++) {
