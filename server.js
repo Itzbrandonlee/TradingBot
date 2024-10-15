@@ -16,11 +16,12 @@ app.get('/api/historical', async (req, res) => {
     try {
       let stock = req.query.symbol;
       console.log(stock);
-      let currentDate = req.query.currentDate;
-      console.log(currentDate);
+      let startDate = req.query.startDate;
+      let endDate = req.query.endDate;
+      console.log(endDate);
       const quotes = await yahooFinance.chart(stock, {
-        period1: '2021-01-01',
-        period2: currentDate,
+        period1: startDate,
+        period2: endDate,
         interval: '1d',
       });
       res.json(quotes);
