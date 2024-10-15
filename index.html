@@ -7,6 +7,7 @@
 </head>
 <body>
   <h1>Yahoo Finance Data</h1>
+  <input type="date" id="userDate"/>
   <button onclick="fetchHistorical('FNGU')">Download Historical FNGU Data</button>
   <button onclick="fetchHistorical('FNGD')">Download Historical FNGD Data</button>
   <button onclick="backtest()">Backtest</button>
@@ -18,10 +19,11 @@
     //This function fetches the data and saves it into a JSON
     async function fetchHistorical(dataset) {
       try {
-        const today = new Date();
-        let currentDate = today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + (today.getDate() - 1);
-        console.log(currentDate);
-        const response = await fetch(`/api/historical?symbol=${dataset}&currentDate=${currentDate}`);
+      //  const today = new Date();
+      //  let currentDate = today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + (today.getDate() - 1);
+        const userDate = document.getElementById("userDate").value;
+        console.log(userDate);
+        const response = await fetch(`/api/historical?symbol=${dataset}&currentDate=${userDate}`);
         const data = await response.json();
         const quotes = data.quotes;
 
@@ -53,7 +55,7 @@
         let shortSMA = calcSMA(closingPrices, shortTimeFrame, longTimeFrame);
         let longSMA = calcSMA(closingPrices, longTimeFrame, longTimeFrame);
 
-        
+        let beginningYearIndex = 0;
         const userInfo = {
             balance: 100000,
             numStock: 0,
