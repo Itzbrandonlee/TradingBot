@@ -11,4 +11,13 @@ This function downloads the historical data of the stock from 1/1/2021 to yester
 **Return Value:**
 - *(none)*
 
-## `fetchHistoricalData(dataset)`
+## `backtest()`
+
+**Description:**
+This function performs a backtest using the Simple Moving Average Crossover algorithm currently
+
+**Parameters:**
+- `none`
+
+**Return Value:**
+- *(none)*
