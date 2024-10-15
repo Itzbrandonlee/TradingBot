@@ -51,7 +51,7 @@ The address should be localhost:3000
 ### Access Stock Data
 Data is downloaded using yahoofinance2. Their full documentation is [here](https://github.com/gadicc/node-yahoo-finance2/blob/devel/docs/README.md)
 #### Basic Overview
-- Stock data is saved within the variable jsonData. It contains children metadata and quotes. Within quotes, there will be stock data for each individual day
+- Stock data is saved within the variable jsonData. It contains children metadata and quotes. Within quotes, there will be stock data for each individual day. quotes is what is specifically saved within the jsonData
 - For example, to access the closing price of the first day: ``` jsonData.quotes[0].close ```
 - Look at the downloaded file so you fully understand the structure of the data
 
