@@ -45,8 +45,8 @@
         const closingPrices = jsonData.map(quote => quote.close);
         const shortTimeFrame = 10;
         const longTimeFrame = 50;
-        let shortSMA = calcSMA(closingPrices, shortTimeFrame);
-        let longSMA = calcSMA(closingPrices, longTimeFrame);
+        let shortSMA = calcSMA(closingPrices, shortTimeFrame, longTimeFrame);
+        let longSMA = calcSMA(closingPrices, longTimeFrame, longTimeFrame);
 
         
         const userInfo = {
@@ -60,11 +60,11 @@
             longSMA = updateSMA(closingPrices, longSMA, i, longTimeFrame);
 
             if(shortSMA > longSMA && shortBelow) {
-                buyStock(jsonData, userInfo, i);
+                buyStock(jsonData, userInfo, i, transactions);
                 shortBelow = false;
             }
             else if(shortSMA < longSMA && !shortBelow && userInfo.numStock > 0) {
-                sellStock(jsonData, userInfo, i);
+                sellStock(jsonData, userInfo, i, transactions);
                 shortBelow = true;
             }
         }
@@ -75,7 +75,7 @@
 
         console.log("BALANCE: " + userInfo.balance);
         console.log("AMOUNT INVESTED: " + (userInfo.numStock * closingPrices[closingPrices.length - 1]));
-        console.log("TOTAL RETURN: " + (((userInfo.numStock * closingPrices[closingPrices.length - 1]) - 100000) / 1000).toFixed(2) + "%");
+        console.log("TOTAL RETURN: " + (((userInfo.numStock * closingPrices[closingPrices.length - 1] + userInfo.balance) - 100000) / 1000).toFixed(2) + "%");
 
         printStats(userInfo, transactions);
       } catch (error) {
@@ -83,24 +83,32 @@
       }
     }
 
-    function calcSMA(closingPrices, timeFrame) {
+    function calcSMA(closingPrices, timeFrame, startingIndex) {
         let sum = 0.00;
-        let startingIndex = timeFrame - 1;
-        for(let i = 0; i < timeFrame; i++) {
-            sum += closingPrices[startingIndex];
-            startingIndex--;
+        for(let i = startingIndex - timeFrame; i < startingIndex; i++) {
+            sum += closingPrices[i];
         }
 
         return (sum / timeFrame);
     }
 
-    function updateSMA(closingPrices, sma, index, smaSize) {
-        sma = sma + ((closingPrices[index] - closingPrices[index-smaSize]) / smaSize);
+    function testSMA(closingPrices, sma, index, smaSize) {
+      let sum = 0.00;
+      for(let i = (index-smaSize); i < index; i++) {
+        sum += closingPrices[i];
+      }
+      let avg = sum / smaSize;
+      console.log("SMA: " + sma);
+      console.log("TESTED SMA: " + avg);
+    }
 
+    function updateSMA(closingPrices, sma, index, smaSize) {
+        sma = (smaSize * sma - closingPrices[index - smaSize] + closingPrices[index]) / smaSize;//((closingPrices[index] - closingPrices[index-smaSize]) / smaSize);
+        console.log("SIZE: " + smaSize + " index: " + index);
         return sma;
     }
 
-    function buyStock(jsonData, userInfo, index) {
+    function buyStock(jsonData, userInfo, index, transactions) {
         const amountToInvest = userInfo.balance * 0.6;
         if(amountToInvest > jsonData[index].close) {
             const numSharesToBuy = Math.floor(amountToInvest / jsonData[index].close);
@@ -111,9 +119,8 @@
         }
     }
 
-    function sellStock(jsonData, userInfo, index) {
-        const amountToDivest = userInfo.balance * 0.3;
-        const numSharesToSell = Math.floor(amountToDivest / jsonData[index].close);
+    function sellStock(jsonData, userInfo, index, transactions) {
+        const numSharesToSell = Math.min(userInfo.numStock, Math.floor(userInfo.numStock * 0.6));
         const singleTransaction = {isBuy: false, date: jsonData[index].date, numShares: numSharesToSell, price: jsonData[index].close};
         transactions.push(singleTransaction);
         userInfo.balance += (numSharesToSell * jsonData[index].close);
@@ -131,15 +138,18 @@
             if(transactions[i].isBuy) {
                 currentNumStock += transactions[i].numShares;
                 currentBalance -= transactions[i].numShares * transactions[i].price;
+                outputText += `${date} BUY: ${transactions[i].numShares} shares @ $${transactions[i].price}\n`;
             }
             else {
                 currentNumStock -= transactions[i].numShares;
                 currentBalance += transactions[i].numShares * transactions[i].price;
-            }
-            singleGainLoss = (currentNumStock * transactions[i].price + currentBalance) - 100000;
-            totalGainLoss += singleGainLoss;
+                singleGainLoss = transactions[i].numShares * (transactions[i].price - (100000 - userInfo.balance) / userInfo.numStock);//singleGainLoss = (currentNumStock * transactions[i].price + currentBalance) - 100000;
+                totalGainLoss += singleGainLoss;
+                outputText += `${date} SELL: ${transactions[i].numShares} shares @ $${transactions[i].price} GAIN/LOSS: $${singleGainLoss.toFixed(2)} TOTAL GAIN/LOSS: $${totalGainLoss.toFixed(2)}\n`;
 
-            outputText += (date + " " + "SINGLE GAIN/LOSS: $" + singleGainLoss.toFixed(2) + " TOTAL GAIN/LOSS: $" + totalGainLoss.toFixed(2) + "\n");
+            }
+
+          //  outputText += (date + " " + "SINGLE GAIN/LOSS: $" + singleGainLoss.toFixed(2) + " TOTAL GAIN/LOSS: $" + totalGainLoss.toFixed(2) + "\n");
         }
         document.getElementById('output').textContent = outputText;
     }
