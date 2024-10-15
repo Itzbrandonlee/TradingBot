@@ -29,19 +29,19 @@
 ## Installation
 
 ### 1. Fork and Clone this repository
-    Fork and clone this repo in order to run the program and/or modify it
+Fork and clone this repo in order to run the program and/or modify it
 
 ### 2. Install Node JS if you haven't already
-    -[https://nodejs.org/en/learn/getting-started/how-to-install-nodejs]
+[Node JS Installation](https://nodejs.org/en/learn/getting-started/how-to-install-nodejs)
 
 ### 3. Install dependencies
-    - in the terminal, use "npm install" to install dependencies
+In the terminal, use "npm install" to install dependencies
 
 ### 4. Run server
-    - in the terminal, use "node server.js" to run the program
+In the terminal, use "node server.js" to run the program
 
 ### 5. Copy and paste address into a browser
-    - the address should be localhost:3000
+The address should be localhost:3000
 
 
 ---
@@ -49,11 +49,11 @@
 ## Usage
 
 ### Access Stock Data
-    - Data is downloaded using yahoofinance2. Their full documentation: https://github.com/gadicc/node-yahoo-finance2/blob/devel/docs/README.md
+Data is downloaded using yahoofinance2. Their full documentation is [here](https://github.com/gadicc/node-yahoo-finance2/blob/devel/docs/README.md)
 #### Basic Overview
-    - Stock data is saved within the variable jsonData. It contains children metadata and quotes. Within quotes, there will be stock data for each individual day
-    - for example, to access the closing price of the first day: "jsonData.quotes[0].close
-    - Look at the downloaded file so you fully understand the structure of the data
+- Stock data is saved within the variable jsonData. It contains children metadata and quotes. Within quotes, there will be stock data for each individual day
+- For example, to access the closing price of the first day: ``` jsonData.quotes[0].close ```
+- Look at the downloaded file so you fully understand the structure of the data
 
 ### Access Transaction Data
-    - Once backtest has been clicked, every transaction will be stored in an array called transactions. Each index will contain: buy vs sell, number of shares, date, and price. 
+Once backtest has been clicked, every transaction will be stored in an array called transactions. Each transaction will contain: buy vs sell, number of shares, date, and price. 
