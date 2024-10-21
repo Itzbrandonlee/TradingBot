@@ -60,8 +60,8 @@ async function fetchHistoricalGraph(dataset) {
           label: 'Closing Prices',
           data: closingPrices,
           fill: false,
-          backgroundColor: '#000000',
-          borderColor: '#000000',
+          backgroundColor: 'rgba(13, 110, 253, 1)',
+          borderColor: 'rgba(13, 110, 253, 1)',
           tension: 0.1,
           pointRadius: 0
         },
@@ -69,13 +69,23 @@ async function fetchHistoricalGraph(dataset) {
           label: 'Opening Prices',
           data: openingPrices,
           fill: false,
-          backgroundColor: '#FF0000',
-          borderColor: '#FF0000',
+          backgroundColor: 'rgba(40, 167, 69, 1)',
+          borderColor: 'rgba(40, 167, 69, 1)',
           tension: 0.1,
           pointRadius: 0
         }]
       },
-      options: {}
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: {
+              color: '#FFFFFF'
+            }
+          }
+        }
+      }
     });
   } catch {
     console.err("Error fetch Historical Graph: ");
@@ -334,37 +344,52 @@ function roundTwoDecimals(number) {
 function displayTransactions() {
   console.log(singleGainLoss);
   const transactionContainer = document.getElementById('transactions');
+  transactionContainer.classList.add('row', 'justify-content-center', 'mt-3');
+
   for(let i = 0; i < transactions.length; i++) {
     const transactionCard = document.createElement('div');
+    transactionCard.classList.add('card', 'col-md-3', 'mb-3', 'mx-3', 'bg-dark', 'text-white', 'shadow', 'rounded', 'border-0');
 
-    const transactionNumber = document.createElement('h1');
+    const cardBody = document.createElement('div');
+    cardBody.classList.add('card-body', 'bg-transparent');
+
+    const transactionNumber = document.createElement('h3');
+    transactionNumber.classList.add('card-title', 'text-primary');
     transactionNumber.textContent = `Transaction #${(i + 1)}`;
 
-    const buyOrSell = document.createElement('h2');
+    const buyOrSell = document.createElement('h4');
+    buyOrSell.classList.add('card-subtitle', 'mb-2', 'text-muted');
     buyOrSell.textContent = `${transactions[i].isBuy ? "Purchase" : "Sale"} ${transactions[i].date}`;
 
     const tradeDetails = document.createElement('p');
+    tradeDetails.classList.add('card-text', 'fw-light');
     tradeDetails.textContent = `Number of Shares: ${transactions[i].numShares} at price ${transactions[i].price.toFixed(2)}`;
 
+    const singleReturn = document.createElement('p');
+    singleReturn.classList.add('card-text');
+    singleReturn.textContent = `Gain/Loss: $${transactions[i].singleReturnDollar.toFixed(2)}`;
+
+    const totalReturn = document.createElement('p');
+    totalReturn.classList.add('card-text', 'fw-bold');
+    totalReturn.textContent = `Total Gain/Loss: $${transactions[i].totalReturnDollar.toFixed(2)}`;
+
+    const annualReturn = document.createElement('p');
+    annualReturn.classList.add('card-text', 'text-muted');
+    annualReturn.textContent = `Annual Return: ${transactions[i].annualReturn.toFixed(2)}%`;
+  
+    const totalReturnPercent = document.createElement('p');
+    totalReturnPercent.classList.add('card-text', 'text-success');
+    totalReturnPercent.textContent = `Total Return: ${transactions[i].totalReturnPercent.toFixed(2)}%`;
+    
     transactionCard.appendChild(transactionNumber);
     transactionCard.appendChild(buyOrSell);
     transactionCard.appendChild(tradeDetails);
+    transactionCard.appendChild(singleReturn);
+    transactionCard.appendChild(totalReturn);
+    transactionCard.appendChild(annualReturn);
+    transactionCard.appendChild(totalReturnPercent);
 
-      const singleReturn = document.createElement('p');
-      singleReturn.textContent = `Gain/Loss: $${transactions[i].singleReturnDollar.toFixed(2)}`;
-      transactionCard.appendChild(singleReturn);
-
-      const totalReturn = document.createElement('p');
-      totalReturn.textContent = `Total Gain/Loss: $${transactions[i].totalReturnDollar.toFixed(2)}`;
-      transactionCard.appendChild(totalReturn);
-
-      const annualReturn = document.createElement('p');
-      annualReturn.textContent = `Annual Return: ${transactions[i].annualReturn.toFixed(2)}%`;
-      transactionCard.appendChild(annualReturn);
-
-      const totalReturnPercent = document.createElement('p');
-      totalReturnPercent.textContent = `Total Return: ${transactions[i].totalReturnPercent.toFixed(2)}%`;
-      transactionCard.appendChild(totalReturnPercent);
+    transactionCard.appendChild(cardBody);
 
     transactionContainer.appendChild(transactionCard);
   }
