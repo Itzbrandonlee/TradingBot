@@ -186,8 +186,8 @@ async function backtest() {
     console.log("AMOUNT INVESTED: " + (userInfo.numStock * closingPrices[closingPrices.length - 1]));
     console.log("TOTAL RETURN: " + (((userInfo.numStock * closingPrices[closingPrices.length - 1] + userInfo.balance) - 100000) / 1000).toFixed(2) + "%");
 
-    calcStats(userInfo, transactions);
     displayTransactions();   //Print the data to the webpage 
+    downloadCSV(transactions, "Transactions.csv")   //Download the transactions as a csv
   } catch (error) {
     console.error('Error fetching sma data:', error);
   }
@@ -256,7 +256,7 @@ function buyStock(jsonData, userInfo, index, transactions) {
     const singleReturnDollar = totalReturnDollar - userInfo.totalReturn;    //Single return is being defined as the amount change since the last display of total return
     userInfo.totalReturn = totalReturnDollar;
     const totalReturnPercent = ((totalReturnDollar / 100000) * 100);    //Get the total return
-    const singleTransaction = { isBuy: true, date: jsonData[index].date.split('T')[0], numShares: numSharesToBuy, price: jsonData[index].close, annualReturn: annualReturn, singleReturnDollar: singleReturnDollar, totalReturnDollar: totalReturnDollar, totalReturnPercent: totalReturnPercent };
+    const singleTransaction = { isBuy: true, date: jsonData[index].date.split('T')[0], numShares: numSharesToBuy, price: jsonData[index].close, annualReturn: annualReturn, singleReturnDollar: singleReturnDollar, totalReturnDollar: totalReturnDollar, totalReturnPercent: totalReturnPercent, currentBalance: totalBalance };
     transactions.push(singleTransaction);   //Push the new transaction into the array of transactions
 
     //Adjust user's balance and number of stocks owned
@@ -281,7 +281,7 @@ function sellStock(jsonData, userInfo, index, transactions) {
   const singleReturnDollar = totalReturnDollar - userInfo.totalReturn;    //Single return is being defined as the amount change since the last display of total return
   userInfo.totalReturn = totalReturnDollar;
   const totalReturnPercent = ((totalReturnDollar / 100000) * 100);    //Get the total return
-  const singleTransaction = { isBuy: false, date: jsonData[index].date.split('T')[0], numShares: numSharesToSell, price: jsonData[index].close, annualReturn: annualReturn, singleReturnDollar: singleReturnDollar, totalReturnDollar: totalReturnDollar, totalReturnPercent: totalReturnPercent };
+  const singleTransaction = { isBuy: false, date: jsonData[index].date.split('T')[0], numShares: numSharesToSell, price: jsonData[index].close, annualReturn: annualReturn, singleReturnDollar: singleReturnDollar, totalReturnDollar: totalReturnDollar, totalReturnPercent: totalReturnPercent, currentBalance: totalBalance };
   transactions.push(singleTransaction);     //Push the new transaction into the array of transactions
 
   //Update user balance and number of stocks after selling
@@ -289,41 +289,7 @@ function sellStock(jsonData, userInfo, index, transactions) {
   userInfo.numStock -= numSharesToSell;
 }
 
-/*  calcStats - This function prints the buy/sell data to the web page
-    INPUTS: userInfo - holds the user's current balance and number of stocks
-            transactions - an array of transaction records
-    OUTPUTS: none
-*/
-let date = null;    //This will be updated with the date of each transaction
-  let singleGainLoss = [];   //Gain or Loss of single transaction
-  let totalGainLoss = 0;    //Gain or Loss of all transactions
-  let totalGainLossAtTransaction = [];
-  let currentNumStock = 0;  //Tracks the number of stocks owned during each transaction 
-  let currentBalance = 100000;    //Tracks the balance during each transaction
-function calcStats(userInfo, transactions) {
-
-  //Iterate through each transaction and update data
-  for (let i = 0; i < transactions.length; i++) {
-    //Updates values if transaction is a purchase
-    if (transactions[i].isBuy) {
-      currentNumStock += transactions[i].numShares;
-      currentBalance -= transactions[i].numShares * transactions[i].price;
-      singleGainLoss[i] = ((currentNumStock * transactions[i].price + currentBalance) - 100000);
-      totalGainLoss += singleGainLoss[i];
-      totalGainLossAtTransaction[i] = totalGainLoss;
-    }
-
-    //Updates values if transaction is a sale
-    else {
-      currentNumStock -= transactions[i].numShares;
-      currentBalance += transactions[i].numShares * transactions[i].price;
-      singleGainLoss[i] = ((currentNumStock * transactions[i].price + currentBalance) - 100000);
-      totalGainLoss += singleGainLoss[i];
-      totalGainLossAtTransaction[i] = totalGainLoss;
-    }
-  }
-}
-
+//Gets the balance of last year's date
 function getTotalBalanceLastYear(jsonData, index) {
     //This checks if we have even passed a year yet. If we haven't we can just return our starting balance
     if(jsonData[index].date.substring(0, 4) === jsonData[0].date.substring(0, 4)) {
@@ -336,13 +302,33 @@ function getTotalBalanceLastYear(jsonData, index) {
     return yearlyInfo.userBalance[yearIndex] + yearlyInfo.userStocks[yearIndex] * jsonData[yearlyInfo.beginningYearIndex[yearIndex]].close;   //This is simply the balance + number of stocks * price all at the given year
 }
 
-function roundTwoDecimals(number) {
-    return Math.round(number * 100) / 100;
+//This function downloads the transactions as a CSV
+function downloadCSV(array, filename) {
+  //Extract the keys from the first object to use as headers
+  const keys = Object.keys(array[0]);
+
+  //Convert array of objects to CSV format
+  const csvContent = [
+    keys.join(','), // Add headers as the first row
+    ...array.map(obj => keys.map(key => obj[key] !== undefined ? obj[key] : '').join(',')) // Join each object's values
+  ].join('\n');
+
+  //Create a Blob from the CSV string
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+  //Create a link element and set the download attribute
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+
+  //Simulate a click on the link to trigger the download
+  link.click();
+  URL.revokeObjectURL(url); // Clean up the URL object
 }
 
 //This displays all the transaction data by creating elements and appending html elements to the transactions id div in index.html
 function displayTransactions() {
-  console.log(singleGainLoss);
   const transactionContainer = document.getElementById('transactions');
   transactionContainer.classList.add('row', 'justify-content-center', 'mt-3');
 
