@@ -1,5 +1,7 @@
 let jsonData = null;
 let transactions = [];
+const historicalTable = document.getElementById('historicalTable');
+historicalTable.hidden = false;
 
 //This will hold general information about the data that may be helpful in the code
 let yearlyInfo = {
@@ -52,6 +54,9 @@ async function fetchHistoricalGraph(dataset) {
     const openingPrices = jsonData.map(quote => quote.open)
     // console.log(closingPrices);
 
+     // Load Historical Table
+     historicalTable.hidden = false;
+
     const historicalGraph = new Chart("historicalGraph", {
       type: "line",
       data: {
@@ -86,7 +91,33 @@ async function fetchHistoricalGraph(dataset) {
           }
         }
       }
+      
     });
+    const column = Object.keys(jsonData[0]);
+    const head = document.querySelector('thead');
+    let tags = "<tr>";
+    for(let i = 0; i < column.length; i++) {  
+      tags += `<th>${column[i]}</th>`;
+    }
+    tags += "</tr>"
+    head.innerHTML = tags;
+
+    const body = document.querySelector('tbody');
+    let row = "";
+    jsonData.map(d => {
+      row += `<tr>
+         <td>${d.date}</td>
+         <td>${d.high}</td>
+         <td>$${d.volume}</td>
+         <td>${d.open}</td>
+         <td>${d.low}</td>
+         <td>$${d.close}</td>
+         <td>$${d.adjclose}</td>
+         </td>`
+    }) 
+    body.innerHTML = row;
+
+
   } catch {
     console.err("Error fetch Historical Graph: ");
   }
