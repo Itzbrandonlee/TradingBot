@@ -340,6 +340,11 @@ function roundTwoDecimals(number) {
     return Math.round(number * 100) / 100;
 }
 
+function getDropdownValue(){
+  const dropdown = document.getElementById("dataType");
+  return dropdown.value;
+}
+
 //This displays all the transaction data by creating elements and appending html elements to the transactions id div in index.html
 function displayTransactions() {
   console.log(singleGainLoss);
