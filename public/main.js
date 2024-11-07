@@ -298,7 +298,6 @@ function updateSMA(closingPrices, sma, index, smaSize) {
 */
 function buyStock(jsonData, userInfo, index, transactions) {
   const amountToInvest = userInfo.balance * 0.6;    //Currently, it is set to buy the number of stocks <= 60% of current balance. This can be tweaked later if desired and is not integral to the formula
-  console.log("TRYING To BUY");
   if (amountToInvest > jsonData[index].close) {    //Check if we can even afford to buy a stock
     const numSharesToBuy = Math.floor(amountToInvest / jsonData[index].close);
 
