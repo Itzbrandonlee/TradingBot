@@ -1,7 +1,8 @@
-const { json } = require("express");
 
 let jsonData = null;
 let transactions = [];
+const historicalTable = document.getElementById('historicalTable');
+historicalTable.hidden = false;
 
 //This will hold general information about the data that may be helpful in the code
 let yearlyInfo = {
@@ -54,6 +55,9 @@ async function fetchHistoricalGraph(dataset) {
     const openingPrices = jsonData.map(quote => quote.open)
     // console.log(closingPrices);
 
+    // Load Historical Table
+    historicalTable.hidden = false;
+
     const historicalGraph = new Chart("historicalGraph", {
       type: "line",
       data: {
@@ -89,8 +93,55 @@ async function fetchHistoricalGraph(dataset) {
         }
       }
     });
+        //historical data in table form 
+        const column = Object.keys(jsonData[0]);
+        const head = document.querySelector('thead');
+        let tags = "<tr>";
+        for (let i = 0; i < column.length; i++) {
+          tags += `<th>${column[i]}</th>`;
+        }
+        tags += "<th>Percent Change</th>";
+        tags += "</tr>"
+        head.innerHTML = tags;
+        //added percentage change calculations 
+        let indexChange = jsonData.length - 2;
+        let prevPrice = jsonData[indexChange].close;
+        indexChange = 1;
+        let percentChange = 0;
+        let newPrice = 0;
+    
+        const body = document.querySelector('tbody');
+        let row = "";
+        //flipped it to be seen in decreasing date order
+        jsonData.reverse().map((d, index) => {
+          newPrice = d.close;
+    
+          if (index == jsonData.length - 1) {
+            percentChange = 0;
+          } else {
+            percentChange = (newPrice - prevPrice) / prevPrice * 100;
+          }
+    
+          row += `<tr>
+             <td>${d.date}</td>
+             <td>${d.high.toFixed(4)}</td>
+             <td>$${d.volume}</td>
+             <td>${d.open.toFixed(4)}</td>
+             <td>${d.low.toFixed(4)}</td>
+             <td>$${d.close.toFixed(4)}</td>
+             <td>$${d.adjclose.toFixed(4)}</td>
+             <td>${percentChange.toFixed(4)}%</td>
+             </td>`
+          indexChange++;
+          if (indexChange <= 4) {
+            prevPrice = jsonData[indexChange].close;
+          }
+        })
+        body.innerHTML = row;
+
+        
   } catch {
-    console.err("Error fetch Historical Graph: ");
+    console.error("Error fetch Historical Graph: ");
   }
 }
 
@@ -124,7 +175,15 @@ function formatDateRange(startDate, endDate, jsonData) {
     INPUTS: none (will need an input of the desired formula when more are implemented)
     OUTPUTS: none
 */
-async function backtest() {
+async function backtest(algo) {
+  if(algo === "BB") {
+    backtestBB();
+    return;
+  }
+  else if(algo === "MACD") {
+    backtestMACD();
+    return;
+  }
   try {
     const closingPrices = jsonData.map(quote => quote.close);   //Put all the closing prices in one array
 
@@ -153,7 +212,7 @@ async function backtest() {
     for (let i = longTimeFrame; i < closingPrices.length; i++) {
 
       //Check if the year has changed yet to update the yearlyInfo.beginningOfYearIndex
-      if(currentYear < jsonData[i].date.substring(0, 4)) {
+      if (currentYear < jsonData[i].date.substring(0, 4)) {
         yearlyInfo.beginningYearIndex.push(i);    //Push the index of the beginning of the new year
         yearlyInfo.userBalance.push(userInfo.balance);   //Push the balance at the beginning of the year
         yearlyInfo.userStocks.push(userInfo.numStock);    //Push the current number of stocks
@@ -190,6 +249,7 @@ async function backtest() {
 
     calcStats(userInfo, transactions);
     displayTransactions();   //Print the data to the webpage 
+    downloadCSV(transactions, "Transactions.csv");   //Download the transactions as a csv
   } catch (error) {
     console.error('Error fetching sma data:', error);
   }
@@ -576,61 +636,110 @@ function getTotalBalanceLastYear(jsonData, index) {
     return yearlyInfo.userBalance[yearIndex] + yearlyInfo.userStocks[yearIndex] * jsonData[yearlyInfo.beginningYearIndex[yearIndex]].close;   //This is simply the balance + number of stocks * price all at the given year
 }
 
-function roundTwoDecimals(number) {
-    return Math.round(number * 100) / 100;
+//This function downloads the transactions as a CSV
+function downloadCSV(array, filename) {
+  //Extract the keys from the first object to use as headers
+  const keys = Object.keys(array[0]);
+
+  //Convert array of objects to CSV format
+  const csvContent = [
+    keys.join(','), // Add headers as the first row
+    ...array.map(obj => keys.map(key => obj[key] !== undefined ? obj[key] : '').join(',')) // Join each object's values
+  ].join('\n');
+
+  //Create a Blob from the CSV string
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+  //Create a link element and set the download attribute
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+
+  //Simulate a click on the link to trigger the download
+  link.click();
+  URL.revokeObjectURL(url); // Clean up the URL object
+}
+
+function getDropdownValue() {
+  const dropdown = document.getElementById("dataType");
+  console.log("DROPDOWN: " + dropdown.value );
+  return dropdown.value;
 }
 
 //This displays all the transaction data by creating elements and appending html elements to the transactions id div in index.html
 function displayTransactions() {
   console.log(singleGainLoss);
   const transactionContainer = document.getElementById('transactions');
-  transactionContainer.classList.add('row', 'justify-content-center', 'mt-3');
+  transactionContainer.classList.add('table-responsive', 'mt-3');
 
-  for(let i = 0; i < transactions.length; i++) {
-    const transactionCard = document.createElement('div');
-    transactionCard.classList.add('card', 'col-md-3', 'mb-3', 'mx-3', 'bg-dark', 'text-white', 'shadow', 'rounded', 'border-0');
+  const table = document.createElement('table');
+  table.classList.add('table', 'table-dark', 'table-striped', 'table-hover', 'text-center', 'shadow');
+  const thead = document.createElement('thead');
+  const headerRow = document.createElement('tr');
+  const headers = ['Transaction #', 'Type', 'Date', 'Shares', 'Price', 'Gain/Loss ($)',
+    'Total Gain/Loss ($)', 'Annual Return (%)', 'Total Return (%)'];
 
-    const cardBody = document.createElement('div');
-    cardBody.classList.add('card-body', 'bg-transparent');
+  headers.forEach(headerText => {
+    const th = document.createElement('th');
+    th.scope = 'col';
+    th.textContent = headerText;
+    headerRow.appendChild(th);
+  });
 
-    const transactionNumber = document.createElement('h3');
-    transactionNumber.classList.add('card-title', 'text-primary');
-    transactionNumber.textContent = `Transaction #${(i + 1)}`;
+  thead.appendChild(headerRow);
+  table.appendChild(thead);
 
-    const buyOrSell = document.createElement('h4');
-    buyOrSell.classList.add('card-subtitle', 'mb-2', 'text-muted');
-    buyOrSell.textContent = `${transactions[i].isBuy ? "Purchase" : "Sale"} ${transactions[i].date}`;
+  // Create table body
+  const tbody = document.createElement('tbody');
 
-    const tradeDetails = document.createElement('p');
-    tradeDetails.classList.add('card-text', 'fw-light');
-    tradeDetails.textContent = `Number of Shares: ${transactions[i].numShares} at price ${transactions[i].price.toFixed(2)}`;
+  for (let i = 0; i < transactions.length; i++) {
+    const row = document.createElement('tr');
 
-    const singleReturn = document.createElement('p');
-    singleReturn.classList.add('card-text');
-    singleReturn.textContent = `Gain/Loss: $${transactions[i].singleReturnDollar.toFixed(2)}`;
+    function createStyledCell(value, isCurrency = false) {
+      const cell = document.createElement('td');
+      cell.textContent = isCurrency ? `$${value.toFixed(2)}` : `${value.toFixed(4)}%`;
+      if (value < 0) {
+        cell.classList.add('text-danger'); // red for negative
+      } else if (value >= 0) {
+        cell.classList.add('text-success'); // green for positive
+      }
+      return cell;
+    }
 
-    const totalReturn = document.createElement('p');
-    totalReturn.classList.add('card-text', 'fw-bold');
-    totalReturn.textContent = `Total Gain/Loss: $${transactions[i].totalReturnDollar.toFixed(2)}`;
+    const transactionNumber = document.createElement('td');
+    transactionNumber.textContent = `${(i + 1)}`;
 
-    const annualReturn = document.createElement('p');
-    annualReturn.classList.add('card-text', 'text-muted');
-    annualReturn.textContent = `Annual Return: ${transactions[i].annualReturn.toFixed(2)}%`;
-  
-    const totalReturnPercent = document.createElement('p');
-    totalReturnPercent.classList.add('card-text', 'text-success');
-    totalReturnPercent.textContent = `Total Return: ${transactions[i].totalReturnPercent.toFixed(2)}%`;
+    const buyOrSell = document.createElement('td');
+    buyOrSell.textContent = `${transactions[i].isBuy ? "Purchase" : "Sale"}` 
     
-    transactionCard.appendChild(transactionNumber);
-    transactionCard.appendChild(buyOrSell);
-    transactionCard.appendChild(tradeDetails);
-    transactionCard.appendChild(singleReturn);
-    transactionCard.appendChild(totalReturn);
-    transactionCard.appendChild(annualReturn);
-    transactionCard.appendChild(totalReturnPercent);
+    const date = document.createElement('td');
+    date.textContent = `${transactions[i].date}`;
 
-    transactionCard.appendChild(cardBody);
+    const numOfShares = document.createElement('td');
+    numOfShares.textContent = `${transactions[i].numShares}` 
+    
+    const sharePrice = document.createElement('td');
+    sharePrice.textContent = `${transactions[i].price.toFixed(2)}`;
 
-    transactionContainer.appendChild(transactionCard);
+    const singleReturn = createStyledCell(transactions[i].singleReturnDollar, true);
+    const totalReturn = createStyledCell(transactions[i].totalReturnDollar, true);
+    const annualReturn = createStyledCell(transactions[i].annualReturn);
+    const totalReturnPercent = createStyledCell(transactions[i].totalReturnPercent);
+
+    row.appendChild(transactionNumber);
+    row.appendChild(buyOrSell);
+    row.appendChild(date);
+    row.appendChild(numOfShares);
+    row.appendChild(sharePrice);
+    row.appendChild(singleReturn);
+    row.appendChild(totalReturn);
+    row.appendChild(annualReturn);
+    row.appendChild(totalReturnPercent);
+
+    tbody.appendChild(row);
+    table.appendChild(tbody);
+
+    transactionContainer.appendChild(table);
   }
 }
