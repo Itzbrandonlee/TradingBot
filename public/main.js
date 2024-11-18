@@ -198,7 +198,7 @@ async function backtestSMA(){
 
     //Assign timeframes for the two moving averages (can be modified if desired, but these are typical timeframes)
     const shortTimeFrame = 5;
-    const longTimeFrame = 10;
+    const longTimeFrame = 25;
 
     //Calculate the averages over the given timeframes
     let shortSMA = calcSMA(closingPrices, shortTimeFrame, longTimeFrame);
@@ -225,6 +225,7 @@ async function backtestSMA(){
     //Starting at longTimeFrame index, iterate through the closing prices and update the averages. When the short average
     // becomes greater than the long average, we buy. When the short average becomes less than the long average, we sell.
     for (let i = longTimeFrame; i < closingPrices.length; i++) {
+      console.log(i + " short:" + shortSMA + " long:" + longSMA + "\n");
 
       //Check if the year has changed yet to update the yearlyInfo.beginningOfYearIndex
       if (currentYear < jsonData[i].date.substring(0, 4)) {
@@ -246,7 +247,7 @@ async function backtestSMA(){
       }
 
       //If the short average just became less than the long average and was greater than in the previous iteration, this is a sell signal
-      else if (shortSMA < longSMA && !shortBelow && userInfo.numStock > 0) {
+      else if (shortSMA < longSMA && !shortBelow) {
         sellStock(jsonData, userInfo, i, transactions);   //Sell the stock
         shortBelow = true;    //Reset the toggle so we know the short average is now less than the long average
       }
@@ -576,6 +577,9 @@ function buyStock(jsonData, userInfo, index, transactions) {
     OUTPUTS: none
 */
 function sellStock(jsonData, userInfo, index, transactions) {
+  if(userInfo.numStock === 0) {
+    return;
+  }
   const numSharesToSell = Math.min(userInfo.numStock, Math.floor(userInfo.numStock * 0.6));   //Number of shares to sell is currently 60% of stocks owned. This can be tweaked later
   const totalBalance = userInfo.balance + (jsonData[index].close * numSharesToSell);
   const totalBalanceLastYear = getTotalBalanceLastYear(jsonData, index);
