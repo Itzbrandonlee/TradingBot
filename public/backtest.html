@@ -52,12 +52,18 @@
 
   <div class="d-flex justify-content-center m-2">
     <select class="form-select form-select-sm w-auto" name="type" id="dataType">
-      <option value="FNGU">FNGU</option>
+      <option value="FNGU" selected>FNGU</option>
       <option value="FNGD">FNGD</option>
     </select>
-    <button class="btn btn-primary shadow-sm m-2" onclick="fetchHistorical(getDropdownValue())">Download Historical
+    <select class="form-select form-select-sm w-auto ms-2" name="type" id="algoType">
+      <option value="">Select an option</option> 
+       <option value="SMA" selected>SMA</option>
+       <option value="MACD">MACD</option>
+       <option value="BB">BB</option>
+     </select>
+     <button class="btn btn-primary shadow-sm m-2" onclick="fetchHistorical(document.getElementById('dataType').value)">Download Historical
       Data</button>
-    <button class="btn btn-success shadow-sm m-2" id="backtest-button" onclick="backtest()">Backtest</button>
+      <button class="btn btn-success shadow-sm m-2" id="backtest-button" onclick="backtest(document.getElementById('algoType').value)">Backtest</button>
   </div>
   <div class="container-md">
     <table class="table table-dark table-striped" id="historicalTable">
