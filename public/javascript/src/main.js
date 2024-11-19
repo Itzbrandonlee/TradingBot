@@ -232,7 +232,8 @@ function sellStock(jsonData, userInfo, index, transactions) {
     return;
   }
   const numSharesToSell = Math.min(userInfo.numStock, Math.floor(userInfo.numStock * 0.6));   //Number of shares to sell is currently 60% of stocks owned. This can be tweaked later
-  const totalBalance = userInfo.balance + (jsonData[index].close * numSharesToSell);
+  const totalBalance = userInfo.balance + (jsonData[index].close * userInfo.numStock);
+  console.log(totalBalance);
   const totalBalanceLastYear = getTotalBalanceLastYear(jsonData, index);
   const annualReturn = (((totalBalance - totalBalanceLastYear) / totalBalanceLastYear) * 100);    //Get the annual return
   const totalReturnDollar = totalBalance - 100000;
@@ -288,10 +289,6 @@ function getTotalBalanceLastYear(jsonData, index) {
     return 100000;
   }
   const yearIndex = jsonData[index].date.substring(0, 4) - jsonData[0].date.substring(0, 4) - 1;    //This subtracts the starting year by the current year which will give us our index
-  console.log(yearIndex);
-  console.log(yearlyInfo);
-  console.log(jsonData[index].date.substring(0, 4));
-  console.log(yearlyInfo.beginningYearIndex);
   return yearlyInfo.userBalance[yearIndex] + yearlyInfo.userStocks[yearIndex] * jsonData[yearlyInfo.beginningYearIndex[yearIndex]].close;   //This is simply the balance + number of stocks * price all at the given year
 }
 
@@ -323,7 +320,6 @@ function downloadCSV(array, filename) {
 
 //This displays all the transaction data by creating elements and appending html elements to the transactions id div in index.html
 function displayTransactions() {
-  console.log(singleGainLoss);
   const transactionContainer = document.getElementById('transactions');
   transactionContainer.innerHTML = '';
   transactionContainer.classList.add('table-responsive', 'mt-3');
