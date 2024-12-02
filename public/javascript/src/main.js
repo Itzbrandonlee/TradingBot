@@ -1,8 +1,12 @@
 
 let jsonData = null;
 let transactions = [];
-const historicalTable = document.getElementById('historicalTable');
-historicalTable.hidden = false;
+
+function getHistoricalTable() {
+  const historicalTable = document.getElementById('historicalTable');
+  historicalTable.hidden = false;
+}
+
 
 //This will hold general information about the data that may be helpful in the code
 let yearlyInfo = {
@@ -56,6 +60,7 @@ async function fetchHistoricalGraph(dataset) {
     // console.log(closingPrices);
 
     // Load Historical Table
+    const historicalTable = document.getElementById('historicalTable');
     historicalTable.hidden = false;
 
     const historicalGraph = new Chart("historicalGraph", {
@@ -233,7 +238,6 @@ function sellStock(jsonData, userInfo, index, transactions) {
   }
   const numSharesToSell = Math.min(userInfo.numStock, Math.floor(userInfo.numStock * 0.6));   //Number of shares to sell is currently 60% of stocks owned. This can be tweaked later
   const totalBalance = userInfo.balance + (jsonData[index].close * userInfo.numStock);
-  console.log(totalBalance);
   const totalBalanceLastYear = getTotalBalanceLastYear(jsonData, index);
   const annualReturn = (((totalBalance - totalBalanceLastYear) / totalBalanceLastYear) * 100);    //Get the annual return
   const totalReturnDollar = totalBalance - 100000;

@@ -22,4 +22,16 @@ describe("SMA TESTS", () => {
 
         expect(actualResult).toBe(expectedResult);
     });
+    test("UpdateSMA Again", () => {
+        const closingPrices = [98, 95, 102, 106, 200, 50, 80, 10];
+        const timeFrame = closingPrices.length;
+        const startSMA = calcSMA(closingPrices, timeFrame, timeFrame);
+        const newValue = 600;
+        const expectedResult = 155.375;
+        closingPrices.push(newValue);
+
+        const actualResult = updateSMA(closingPrices, startSMA, timeFrame, timeFrame);
+
+        expect(actualResult).toBe(expectedResult);
+    })
 });

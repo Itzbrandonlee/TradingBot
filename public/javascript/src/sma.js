@@ -49,6 +49,9 @@ async function backtestSMA(jsonData){
         //Update the two averages
         shortSMA = updateSMA(closingPrices, shortSMA, i, shortTimeFrame);
         longSMA = updateSMA(closingPrices, longSMA, i, longTimeFrame);
+
+        console.log("SHORT: " + shortSMA + " LONG: " + longSMA);
+        console.log(jsonData[i].date.substring(0, 10) + '\n');
   
         //If the short average just became greater than the long average and was less than in the previous iteration, this is a buy signal
         if (shortSMA > longSMA && shortBelow) {
