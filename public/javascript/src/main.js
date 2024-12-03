@@ -150,10 +150,6 @@ async function fetchHistoricalGraph(dataset) {
   }
 }
 
-function addTransactionToGraph() {
-
-}
-
 function formatDateRange(startDate, endDate, jsonData) {
   const start = new Date(startDate);
   const end = new Date(endDate);
@@ -257,6 +253,21 @@ function sellStock(jsonData, userInfo, index, transactions, algo) {
   userInfo.balance += (numSharesToSell * jsonData[index].close);
   userInfo.numStock -= numSharesToSell;
 }
+
+function getStockAmount(data, algo, valuesNeeded) {
+  switch (algo) {
+    case "SMA":
+      
+      break;
+    case "BB":
+
+      break;
+    case "MACD":
+
+      break;
+  }
+}
+
 
 /*  calcStats - This function prints the buy/sell data to the web page
     INPUTS: userInfo - holds the user's current balance and number of stocks
