@@ -150,6 +150,10 @@ async function fetchHistoricalGraph(dataset) {
   }
 }
 
+function addTransactionToGraph() {
+
+}
+
 function formatDateRange(startDate, endDate, jsonData) {
   const start = new Date(startDate);
   const end = new Date(endDate);
@@ -197,6 +201,7 @@ async function backtest(algo) {
   }   
 }
 
+//TODO: IMPLEMENT THE STRATEGY METHOD TO DETERMINE AMOUNT OF STOCK TO BUY
 /*  buyStock - This function is called when we want to buy stocks
     INPUTS: jsonData - the stock data to base purchase off of
             userInfo - holds the user's current balance and number of stocks
@@ -204,7 +209,7 @@ async function backtest(algo) {
             transactions - an array of transaction records
     OUTPUTS: none
 */
-function buyStock(jsonData, userInfo, index, transactions) {
+function buyStock(jsonData, userInfo, index, transactions, algo) {
   const amountToInvest = userInfo.balance * 0.6;    //Currently, it is set to buy the number of stocks <= 60% of current balance. This can be tweaked later if desired and is not integral to the formula
   if (amountToInvest > jsonData[index].close) {    //Check if we can even afford to buy a stock
     const numSharesToBuy = Math.floor(amountToInvest / jsonData[index].close);
@@ -225,6 +230,7 @@ function buyStock(jsonData, userInfo, index, transactions) {
   }
 }
 
+//TODO: IMPLEMENT THE STRATEGY METHOD TO DETERMINE AMOUNT OF STOCK TO SELL
 /*  sellStock - This function is called when we want to sell stocks
     INPUTS: jsonData - the stock data to base sale off of
             userInfo - holds the user's current balance and number of stocks
@@ -232,7 +238,7 @@ function buyStock(jsonData, userInfo, index, transactions) {
             transactions - an array of transaction records
     OUTPUTS: none
 */
-function sellStock(jsonData, userInfo, index, transactions) {
+function sellStock(jsonData, userInfo, index, transactions, algo) {
   if(userInfo.numStock === 0) {
     return;
   }
@@ -325,15 +331,20 @@ function downloadCSV(array, filename) {
 //This displays all the transaction data by creating elements and appending html elements to the transactions id div in index.html
 function displayTransactions() {
   const transactionContainer = document.getElementById('transactions');
-  transactionContainer.innerHTML = '';
+  transactionContainer.innerHTML = ''; // Clear previous content
   transactionContainer.classList.add('table-responsive', 'mt-3');
 
+  // Arrays to store data for the line chart
+  const xyValues = [];
+  const labels = [];
+
+  // Create table elements first
   const table = document.createElement('table');
   table.classList.add('table', 'table-dark', 'table-striped', 'table-hover', 'text-center', 'shadow');
   const thead = document.createElement('thead');
   const headerRow = document.createElement('tr');
-  const headers = ['Transaction #', 'Type', 'Date', 'Shares', 'Price', 'Gain/Loss ($)',
-    'Total Gain/Loss ($)', 'Annual Return (%)', 'Total Return (%)'];
+  const headers = ['Transaction #', 'Type', 'Date', 'Shares', 'Price', 'Gain/Loss ($)', 
+                   'Total Gain/Loss ($)', 'Annual Return (%)', 'Total Return (%)'];
 
   headers.forEach(headerText => {
     const th = document.createElement('th');
@@ -348,6 +359,7 @@ function displayTransactions() {
   // Create table body
   const tbody = document.createElement('tbody');
 
+  // Loop through transactions and fill the table and chart data
   for (let i = 0; i < transactions.length; i++) {
     const row = document.createElement('tr');
 
@@ -366,13 +378,17 @@ function displayTransactions() {
     transactionNumber.textContent = `${(i + 1)}`;
 
     const buyOrSell = document.createElement('td');
-    buyOrSell.textContent = `${transactions[i].isBuy ? "Purchase" : "Sale"}`
+    buyOrSell.textContent = `${transactions[i].isBuy ? "Purchase" : "Sale"}`;
 
     const date = document.createElement('td');
     date.textContent = `${transactions[i].date}`;
 
+    // Store data for the chart
+    xyValues.push({ x: transactions[i].date, y: transactions[i].price });
+    labels.push(transactions[i].isBuy ? 'Purchase' : 'Sale');
+
     const numOfShares = document.createElement('td');
-    numOfShares.textContent = `${transactions[i].numShares}`
+    numOfShares.textContent = `${transactions[i].numShares}`;
 
     const sharePrice = document.createElement('td');
     sharePrice.textContent = `${transactions[i].price.toFixed(2)}`;
@@ -394,9 +410,86 @@ function displayTransactions() {
 
     tbody.appendChild(row);
     table.appendChild(tbody);
-
-    transactionContainer.appendChild(table);
   }
+
+  // Create the chart before the table
+  const chartCanvas = document.createElement('canvas');
+  chartCanvas.id = 'priceChart';
+  transactionContainer.appendChild(chartCanvas); // Append chart before the table
+
+  const dateRange = transactions.map(transaction => transaction.date);
+  const closingPrices = jsonData.map(quote => quote.close);
+  const openingPrices = jsonData.map(quote => quote.open);
+
+  const ctx = chartCanvas.getContext('2d');
+  const priceChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: dateRange, // Dates for X-axis
+      datasets: [
+        {
+          type: 'scatter',
+          label: 'Transaction Price ($)',
+          data: xyValues, // Scatter plot data
+          borderColor: '#3498db',
+          backgroundColor: 'rgba(52, 152, 219, 0.2)',
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: (context) => {
+            const index = context.dataIndex;
+            return labels[index] === 'Purchase' ? 'green' : 'red';
+          },
+          pointRadius: 5,
+        },
+        {
+          type: 'line',
+          label: 'Opening Prices',
+          data: openingPrices,
+          fill: false,
+          backgroundColor: 'rgba(128, 0, 128, 1)',
+          borderColor: 'rgba(128, 0, 128, 1)',
+          tension: 0.1,
+          pointRadius: 0
+        },
+        {
+          type: 'line',
+          label: 'Closing Prices',
+          data: closingPrices,
+          fill: false,
+          backgroundColor: 'rgba(13, 110, 253, 1)',
+          borderColor: 'rgba(13, 110, 253, 1)',
+          tension: 0.1,
+          pointRadius: 0
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top',
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: false,
+          title: {
+            display: true,
+            text: 'Price ($)'
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: 'Transaction Date'
+          }
+        }
+      }
+    }
+  });
+
+  // Append the table after the chart
+  transactionContainer.appendChild(table);
 }
 
 module.exports = {buyStock};

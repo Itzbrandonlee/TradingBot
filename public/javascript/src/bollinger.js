@@ -2,6 +2,7 @@ async function backtestBB(jsonData) {
     try {
       const closingPrices = jsonData.map(quote => quote.close);   //Put all the closing prices in one array
   
+      const algo = "BB";
       const bbCalc = bollingerBands(closingPrices);
   
       transactions = [];
@@ -32,10 +33,10 @@ async function backtestBB(jsonData) {
         }
   
         if (signal.action === 'buy') {
-          buyStock(jsonData, userInfo, index, transactions);
+          buyStock(jsonData, userInfo, index, transactions, algo);
         }
         else if (signal.action === 'sell') {
-          sellStock(jsonData, userInfo, index, transactions);
+          sellStock(jsonData, userInfo, index, transactions, algo);
         }
       }
   
