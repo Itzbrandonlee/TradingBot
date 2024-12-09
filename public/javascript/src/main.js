@@ -288,6 +288,21 @@ function sellStock(jsonData, userInfo, index, transactions, algo) {
   userInfo.numStock -= numSharesToSell;
 }
 
+function getStockAmount(data, algo, valuesNeeded) {
+  switch (algo) {
+    case "SMA":
+      
+      break;
+    case "BB":
+
+      break;
+    case "MACD":
+
+      break;
+  }
+}
+
+
 /*  calcStats - This function prints the buy/sell data to the web page
     INPUTS: userInfo - holds the user's current balance and number of stocks
             transactions - an array of transaction records
