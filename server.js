@@ -47,6 +47,25 @@ app.get('/api/historical', async (req, res) => {
     }
   });
 
+  app.get('/api/realtime/:symbol', async (req, res) => {
+    try {
+      const symbol = req.params.symbol;
+      const quote = await yahooFinance.quote(symbol, {
+        modules: ['price'],
+      });
+      const realTimePrice = quote.price.regularMarketPrice;
+  
+      if (realTimePrice !== undefined) {
+        res.json({ symbol: symbol, price: realTimePrice });
+      } else {
+        res.status(404).json({ error: 'Real-time price not found' });
+      }
+    } catch (err) {
+      console.error('Error fetching real-time price:', err);
+      res.status(500).json({ error: 'Error fetching real-time data' });
+    }
+  });
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
