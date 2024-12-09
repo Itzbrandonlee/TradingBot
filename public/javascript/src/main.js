@@ -159,35 +159,35 @@ async function fetchHistoricalGraph(dataset) {
     console.error("Error fetch Historical Graph: ");
   }
 
-//   function updateGraph() {
-//     let range;
-//     if(dataset == 'FNGD') {
-//       range = 10;
-//     } else if (dataset == 'FNGU') {
-//       range = 1;
-//     }
+  function updateGraph() {
+    let range;
+    if(dataset == 'FNGD') {
+      range = 10;
+    } else if (dataset == 'FNGU') {
+      range = 1;
+    }
   
-//     let num = closingPrices[closingPrices.length - 1];
-//     let sign = Math.random() < 0.5 ? -1 : 1;
-//     let randomValue = Math.random() * range;
-//     num += sign * randomValue;
+    let num = closingPrices[closingPrices.length - 1];
+    let sign = Math.random() < 0.5 ? -1 : 1;
+    let randomValue = Math.random() * range;
+    num += sign * randomValue;
 
-//     // Push new data
-//     closingPrices.push(num);
-//     openingPrices.push(num - Math.random() * 5);
-//     const newLabel = new Date().toLocaleTimeString();
-//     historicalGraph.data.labels.push(newLabel);
+    // Push new data
+    closingPrices.push(num);
+    openingPrices.push(num - Math.random() * 5);
+    const newLabel = new Date().toLocaleTimeString();
+    historicalGraph.data.labels.push(newLabel);
 
-//     // Remove old data if necessary (keep graph manageable)
-//     if (closingPrices.length > 50) {
-//         closingPrices.shift();
-//         openingPrices.shift();
-//         historicalGraph.data.labels.shift();
-//     }
+    // Remove old data if necessary (keep graph manageable)
+    if (closingPrices.length > 50) {
+        closingPrices.shift();
+        openingPrices.shift();
+        historicalGraph.data.labels.shift();
+    }
 
-//     historicalGraph.update();
-// }
-//   setInterval(updateGraph, 3000);
+    historicalGraph.update();
+}
+  setInterval(updateGraph, 3000);
 }
 
 //live update graph for home page 
