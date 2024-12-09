@@ -59,9 +59,9 @@
        <option value="MACD">MACD</option>
        <option value="BB">BB</option>
      </select>
-     <button class="btn btn-primary shadow-sm m-2" onclick="fetchHistorical(document.getElementById('dataType').value)">Download Historical
+     <button id="fetch-historical-button" class="btn btn-primary shadow-sm m-2">Download Historical
       Data</button>
-      <button class="btn btn-success shadow-sm m-2" id="backtest-button" onclick="backtest(document.getElementById('algoType').value)">Backtest</button>
+      <button class="btn btn-success shadow-sm m-2" id="backtest-button">Backtest</button>
   </div>
 
   <div class="container-md">
@@ -75,10 +75,6 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
-  <script src="/javascript/src/main.js"></script>
-  <script src="/javascript/src/macd.js"></script>
-  <script src="/javascript/src/bollinger.js"></script>
-  <script src="/javascript/src/sma.js"></script>
 
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"
     integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p"
@@ -87,6 +83,15 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js"
     integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF"
     crossorigin="anonymous"></script>
+
+  <script type="module">
+    import TradingController from './javascript/src/controllers/tradingController.js';
+
+    document.getElementById('fetch-historical-button').addEventListener('click', TradingController.fetchHistorical);
+    document.getElementById('backtest-button').addEventListener('click', () => {
+      TradingController.backtest(document.getElementById('algoType').value);
+    });
+  </script>
 
 </body>
 
