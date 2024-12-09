@@ -159,35 +159,6 @@ async function fetchHistoricalGraph(dataset) {
     console.error("Error fetch Historical Graph: ");
   }
 
-  function updateGraph() {
-    let range;
-    if(dataset == 'FNGD') {
-      range = 10;
-    } else if (dataset == 'FNGU') {
-      range = 1;
-    }
-  
-    let num = closingPrices[closingPrices.length - 1];
-    let sign = Math.random() < 0.5 ? -1 : 1;
-    let randomValue = Math.random() * range;
-    num += sign * randomValue;
-
-    // Push new data
-    closingPrices.push(num);
-    openingPrices.push(num - Math.random() * 5);
-    const newLabel = new Date().toLocaleTimeString();
-    historicalGraph.data.labels.push(newLabel);
-
-    // Remove old data if necessary (keep graph manageable)
-    if (closingPrices.length > 50) {
-        closingPrices.shift();
-        openingPrices.shift();
-        historicalGraph.data.labels.shift();
-    }
-
-    historicalGraph.update();
-}
-  setInterval(updateGraph, 3000);
 }
 
 //live update graph for home page 
@@ -198,7 +169,7 @@ async function fetchLiveGraph(dataset) {
 
   try {
     // Initial data fetch (if needed)
-    const initialResponse = await fetch(`/api/historical?symbol=${dataset}&startDate=2024-12-01&endDate=${new Date().toISOString().split('T')[0]}`);
+    const initialResponse = await fetch(`/api/historical?symbol=${dataset}&startDate=2024-06-01&endDate=${new Date().toISOString().split('T')[0]}`);
     const initialData = await initialResponse.json();
     jsonData = initialData.quotes;
 
@@ -250,32 +221,57 @@ async function fetchLiveGraph(dataset) {
       }
     });
 
-    async function updateGraph() {
-      try {
-        const response = await fetch(`/api/real-time?symbol=${dataset}`);
-        const newData = await response.json();
-        const latestQuote = newData.latestQuote;
+    // async function updateGraph() {
+    //   try {
+    //     const response = await fetch(`/api/real-time?symbol=${dataset}`);
+    //     const newData = await response.json();
+    //     const latestQuote = newData.latestQuote;
 
-        // Add new data to the graph
-        closingPrices.push(latestQuote.close);
-        openingPrices.push(latestQuote.open);
-        historicalGraph.data.labels.push(new Date().toLocaleTimeString());
+    //     // Add new data to the graph
+    //     closingPrices.push(latestQuote.close);
+    //     openingPrices.push(latestQuote.open);
+    //     historicalGraph.data.labels.push(new Date().toLocaleTimeString());
 
-        // Remove old data if necessary to keep the graph manageable
-        if (closingPrices.length > 50) {
+    //     // Remove old data if necessary to keep the graph manageable
+    //     if (closingPrices.length > 50) {
+    //       closingPrices.shift();
+    //       openingPrices.shift();
+    //       historicalGraph.data.labels.shift();
+    //     }
+
+    //     historicalGraph.update();
+    //   } catch (error) {
+    //     console.error("Error fetching real-time data: ", error);
+    //   }
+    // }
+
+    // // Update the graph every second
+    // setInterval(updateGraph, 1000);
+
+    function updateGraph() {
+      let range = 5;
+    
+      let num = closingPrices[closingPrices.length - 1];
+      let sign = Math.random() < 0.5 ? -1 : 1;
+      let randomValue = Math.random() * range;
+      num += sign * randomValue;
+  
+      // Push new data
+      closingPrices.push(num);
+      openingPrices.push(num - Math.random() * 5);
+      const newLabel = new Date().toLocaleTimeString();
+      historicalGraph.data.labels.push(newLabel);
+  
+      // Remove old data if necessary (keep graph manageable)
+      if (closingPrices.length > 50) {
           closingPrices.shift();
           openingPrices.shift();
           historicalGraph.data.labels.shift();
-        }
-
-        historicalGraph.update();
-      } catch (error) {
-        console.error("Error fetching real-time data: ", error);
       }
-    }
-
-    // Update the graph every second
-    setInterval(updateGraph, 1000);
+  
+      historicalGraph.update();
+  }
+    setInterval(updateGraph, 3000);
 
   } catch (error) {
     console.error("Error fetching live graph: ", error);
