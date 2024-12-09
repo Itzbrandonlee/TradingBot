@@ -159,29 +159,131 @@ async function fetchHistoricalGraph(dataset) {
     console.error("Error fetch Historical Graph: ");
   }
 
-  function updateGraph() {
-    const range = 10;
-    let num = closingPrices[closingPrices.length - 1];
-    let sign = Math.random() < 0.5 ? -1 : 1;
-    let randomValue = Math.random() * range;
-    num += sign * randomValue;
+//   function updateGraph() {
+//     let range;
+//     if(dataset == 'FNGD') {
+//       range = 10;
+//     } else if (dataset == 'FNGU') {
+//       range = 1;
+//     }
+  
+//     let num = closingPrices[closingPrices.length - 1];
+//     let sign = Math.random() < 0.5 ? -1 : 1;
+//     let randomValue = Math.random() * range;
+//     num += sign * randomValue;
 
-    // Push new data
-    closingPrices.push(num);
-    openingPrices.push(num - Math.random() * 5);
-    const newLabel = new Date().toLocaleTimeString();
-    historicalGraph.data.labels.push(newLabel);
+//     // Push new data
+//     closingPrices.push(num);
+//     openingPrices.push(num - Math.random() * 5);
+//     const newLabel = new Date().toLocaleTimeString();
+//     historicalGraph.data.labels.push(newLabel);
 
-    // Remove old data if necessary (keep graph manageable)
-    if (closingPrices.length > 50) {
-        closingPrices.shift();
-        openingPrices.shift();
-        historicalGraph.data.labels.shift();
+//     // Remove old data if necessary (keep graph manageable)
+//     if (closingPrices.length > 50) {
+//         closingPrices.shift();
+//         openingPrices.shift();
+//         historicalGraph.data.labels.shift();
+//     }
+
+//     historicalGraph.update();
+// }
+//   setInterval(updateGraph, 3000);
+}
+
+//live update graph for home page 
+async function fetchLiveGraph(dataset) {
+  let closingPrices = [];
+  let openingPrices = [];
+  let historicalGraph;
+
+  try {
+    // Initial data fetch (if needed)
+    const initialResponse = await fetch(`/api/historical?symbol=${dataset}&startDate=2024-12-01&endDate=${new Date().toISOString().split('T')[0]}`);
+    const initialData = await initialResponse.json();
+    jsonData = initialData.quotes;
+
+    const dateRange = formatDateRange("2024-12-01", new Date().toISOString().split('T')[0], jsonData);
+    closingPrices = jsonData.map(quote => quote.close);
+    openingPrices = jsonData.map(quote => quote.open);
+
+    historicalGraph = new Chart("historicalGraphLive", {
+      type: "line",
+      data: {
+        labels: dateRange,
+        datasets: [
+          {
+            label: 'Closing Prices',
+            data: closingPrices,
+            fill: false,
+            backgroundColor: 'rgba(13, 110, 253, 1)',
+            borderColor: 'rgba(13, 110, 253, 1)',
+            tension: 0.1,
+            pointRadius: 0
+          },
+          {
+            label: 'Opening Prices',
+            data: openingPrices,
+            fill: false,
+            backgroundColor: 'rgba(40, 167, 69, 1)',
+            borderColor: 'rgba(40, 167, 69, 1)',
+            tension: 0.1,
+            pointRadius: 0
+          }
+        ]
+      },
+      options: {
+        plugins: {
+          tooltip: {
+            enabled: true,
+            mode: 'index',
+            intersect: false,
+          },
+          legend: {
+            labels: { color: '#FFFFFF' },
+          },
+        },
+        interaction: {
+          mode: 'nearest',
+          axis: 'x',
+          intersect: false,
+        },
+      }
+    });
+
+    async function updateGraph() {
+      try {
+        const response = await fetch(`/api/real-time?symbol=${dataset}`);
+        const newData = await response.json();
+        const latestQuote = newData.latestQuote;
+
+        // Add new data to the graph
+        closingPrices.push(latestQuote.close);
+        openingPrices.push(latestQuote.open);
+        historicalGraph.data.labels.push(new Date().toLocaleTimeString());
+
+        // Remove old data if necessary to keep the graph manageable
+        if (closingPrices.length > 50) {
+          closingPrices.shift();
+          openingPrices.shift();
+          historicalGraph.data.labels.shift();
+        }
+
+        historicalGraph.update();
+      } catch (error) {
+        console.error("Error fetching real-time data: ", error);
+      }
     }
 
-    historicalGraph.update();
+    // Update the graph every second
+    setInterval(updateGraph, 1000);
+
+  } catch (error) {
+    console.error("Error fetching live graph: ", error);
+  }
 }
-  setInterval(updateGraph, 1000);
+
+window.onload = () => {
+  fetchLiveGraph('FNGU');
 }
 
 function formatDateRange(startDate, endDate, jsonData) {
@@ -458,9 +560,16 @@ function displayTransactions() {
   }
 
   // Create the chart before the table
+  const chartDiv = document.createElement('div');
+  chartDiv.classList.add('d-flex', 'justify-content-center');
   const chartCanvas = document.createElement('canvas');
   chartCanvas.id = 'priceChart';
-  transactionContainer.appendChild(chartCanvas); // Append chart before the table
+  chartCanvas.style.width = '100%';
+  chartCanvas.style.maxWidth = '50%';
+
+  chartDiv.appendChild(chartCanvas); // Append chart before the table
+  transactionContainer.appendChild(chartDiv);
+  transactionContainer.appendChild(table);
 
   const dateRange = transactions.map(transaction => transaction.date);
   const closingPrices = jsonData.map(quote => quote.close);
@@ -533,8 +642,6 @@ function displayTransactions() {
     }
   });
 
-  // Append the table after the chart
-  transactionContainer.appendChild(table);
 }
 
 module.exports = {buyStock};
