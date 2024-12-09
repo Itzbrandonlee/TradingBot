@@ -47,6 +47,10 @@ async function fetchHistorical(dataset) {
 }
 //chart information 
 async function fetchHistoricalGraph(dataset) {
+  let closingPrices = [];
+  let openingPrices = [];
+  let historicalGraph;
+  
   try {
     const startDate = document.getElementById("startDate").value;
     const endDate = document.getElementById("endDate").value;
@@ -55,15 +59,15 @@ async function fetchHistoricalGraph(dataset) {
     jsonData = data.quotes;
 
     const dateRange = formatDateRange(startDate, endDate, jsonData);
-    const closingPrices = jsonData.map(quote => quote.close)
-    const openingPrices = jsonData.map(quote => quote.open)
+    closingPrices = jsonData.map(quote => quote.close)
+    openingPrices = jsonData.map(quote => quote.open)
     // console.log(closingPrices);
 
     // Load Historical Table
     const historicalTable = document.getElementById('historicalTable');
     historicalTable.hidden = false;
 
-    const historicalGraph = new Chart("historicalGraph", {
+    historicalGraph = new Chart("historicalGraph", {
       type: "line",
       data: {
         labels: dateRange,
@@ -87,15 +91,21 @@ async function fetchHistoricalGraph(dataset) {
         }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
         plugins: {
-          legend: {
-            labels: {
-              color: '#FFFFFF'
-            }
-          }
-        }
+            tooltip: {
+                enabled: true,
+                mode: 'index',
+                intersect: false,
+            },
+            legend: {
+                labels: { color: '#FFFFFF' },
+            },
+        },
+        interaction: {
+            mode: 'nearest',
+            axis: 'x',
+            intersect: false,
+        },
       }
     });
     //historical data in table form 
@@ -148,10 +158,30 @@ async function fetchHistoricalGraph(dataset) {
   } catch {
     console.error("Error fetch Historical Graph: ");
   }
+
+  function updateGraph() {
+    const range = 10;
+    let num = closingPrices[closingPrices.length - 1];
+    let sign = Math.random() < 0.5 ? -1 : 1;
+    let randomValue = Math.random() * range;
+    num += sign * randomValue;
+
+    // Push new data
+    closingPrices.push(num);
+    openingPrices.push(num - Math.random() * 5);
+    const newLabel = new Date().toLocaleTimeString();
+    historicalGraph.data.labels.push(newLabel);
+
+    // Remove old data if necessary (keep graph manageable)
+    if (closingPrices.length > 50) {
+        closingPrices.shift();
+        openingPrices.shift();
+        historicalGraph.data.labels.shift();
+    }
+
+    historicalGraph.update();
 }
-
-function addTransactionToGraph() {
-
+  setInterval(updateGraph, 1000);
 }
 
 function formatDateRange(startDate, endDate, jsonData) {
